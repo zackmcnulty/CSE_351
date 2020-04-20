@@ -1,0 +1,24 @@
+Rough outline of commands used for gdb (tui) demo on mov.s:
+If the tui windows start looking weird, run the command "refresh"
+
+> gcc -o mov mov.s
+> gdb mov
+> break main
+> run
+> layout asm
+> layout regs
+> stepi 3
+> print $rax
+> print /x $rax
+> print /x $eax
+> print /x $ax
+> stepi
+> stepi
+> stepi
+> x $rax
+> x /g $rax
+> x /b $rax+4
+> stepi
+> kill
+> y
+> quit

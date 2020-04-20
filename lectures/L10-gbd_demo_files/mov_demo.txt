@@ -1,0 +1,29 @@
+Rough outline of commands used for gdb demo on mov.s:
+
+> gcc -o mov mov.s
+> gdb mov
+> break main
+> run
+> stepi 3
+> disas main
+> print $rax
+> print /x $rax
+> print /x $eax
+> print /x $ax
+> print /x $rbx
+> print /x $rcx
+> stepi
+> print /x $rbx
+> stepi
+> print /x $rbx
+> disas main
+> stepi
+> print /x $rax
+> x $rax
+> x /g $rax
+> x /b $rax+4
+> stepi
+> print /x $rbx
+> kill
+> y
+> quit
