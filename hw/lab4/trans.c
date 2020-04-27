@@ -26,6 +26,36 @@ int is_transpose(int M, int N, int A[M][N], int B[N][M]);
 char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[M][N], int B[N][M]) {
 
+// Since the block sizes are 32 bits, we can fit 4 ints per block
+// The cache itself is 2^10 = 1024 bits = 256 ints large. Since this is a direct mapped cache, this
+// implies elements of our 2D array that get mapped to same set in cache are 256 ints apart: 8 rows down in the 32 x 32 case
+// and 4 rows down in the 64 x 64 case. Hence 8 x 8 blocks and 4 x 4 blocks will work decently in the 32 x 32 and 64 x 64 cases respectively.
+
+
+	int block_height;
+	int block_width;
+
+	if (N == 32){ // 32 x 32 case
+		block_height = 8;
+		block_width = 8;
+	} else { // 64 x 64 case
+		block_height = 4;
+		block_width = 4;
+	}
+
+	int blocks_tall = M / block_height;
+	int blocks_wide = N / block_width;
+
+	for (int i=0; i < blocks_wide; i++){
+		for (int j=0; j < blocks_tall; j++){
+			for (int ii = i*block_width; ii < (i+1)*block_width; ii++){
+				for (int jj  = j*block_width; jj < (j+1)*block_width; jj++) {
+					B[jj][ii] = A[ii][jj];
+				}
+			}
+		}
+	}
+
 }
 
 /* 
