@@ -398,14 +398,33 @@ void* mm_malloc(size_t size) {
 	precedingBlockUseTag = (ptrFreeBlock->sizeAndTags) & TAG_PRECEDING_USED;
 	blockSize = SIZE(ptrFreeBlock->sizeAndTags);
 
-	// Set the header for allocated block as USED
-	ptrFreeBlock->sizeAndTags |= TAG_USED;
-
-	// Set the following block's header PRECEDING_TAG as USED (we know this block must be used as otherwise it would have been coallesced already with the free block we just found
-	// So we dont have to worry about updating the footer tag as well
-	BlockInfo* nextBlock = UNSCALED_POINTER_ADD(ptrFreeBlock, blockSize); // points to next block in heap (allocated or end of heap)
-	nextBlock->sizeAndTags |= TAG_PRECEDING_USED;  // set tag that the preceding block is now allocated
 	
+	// check if we have enough space to split the block
+	if (blockSize - reqSize >= MIN_BLOCK_SIZE) { //split
+
+		ptrFreeBlock->sizeAndTags = (reqSize | TAG_USED) | precedingBlockUseTag; // adjust block size to reqSize (and maintain the tags) so we have room to split; 
+
+		BlockInfo* splitBlock = (BlockInfo*) UNSCALED_POINTER_ADD(ptrFreeBlock, reqSize); // new free block we make from the split
+
+		splitBlock->sizeAndTags = (blockSize - reqSize) | TAG_PRECEDING_USED; // set split block's header (this also sets TAG_USED = 0)
+
+		size_t* footer = UNSCALED_POINTER_ADD(splitBlock, blockSize-reqSize - WORD_SIZE); //set the split block's footer by copying header
+		*footer = splitBlock->sizeAndTags;
+
+		insertFreeBlock(splitBlock); // insert split block into free chain
+		coalesceFreeBlock(splitBlock); // coalesce
+
+	} else{ // no split
+		
+		// Set the header for allocated block as USED
+		ptrFreeBlock->sizeAndTags |= TAG_USED;
+
+		// Set the following block's header PRECEDING_TAG as USED (we know this block must be used as otherwise it would have been coallesced already with the free block we just found
+		// So we dont have to worry about updating the footer tag as well
+		BlockInfo* nextBlock = UNSCALED_POINTER_ADD(ptrFreeBlock, blockSize); // points to next block in heap (allocated or end of heap)
+		nextBlock->sizeAndTags |= TAG_PRECEDING_USED;  // set tag that the preceding block is now allocated
+	
+	}
 
   	return UNSCALED_POINTER_ADD(ptrFreeBlock, WORD_SIZE); // Return pointer of allocated block RIGHT after header (dont want user to store data in the header)
 }
